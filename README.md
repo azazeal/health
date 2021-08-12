@@ -15,37 +15,39 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/azazeal/health"
+	"github.com/azazeal/pause"
 )
 
 func main() {
-	var hc health.Checker
+	var hc health.Check
 	go longRunningTaskThatMightFail(context.TODO(), &hc)
 
 	http.Handle("/health", &hc) // /health returns 204 if hc.Healthy(), or 503
 	if err := http.ListenAndServe(":8080", nil); err != http.ErrServerClosed {
 		log.Fatal(err)
 	}
-	hc.Healthy()
 }
 
-func longRunningTaskThatMightFail(ctx context.Context, hc *health.Checker) {
+func longRunningTaskThatMightFail(ctx context.Context, hc *health.Check) {
 	for ctx.Err() == nil {
 		if err := mightFail(ctx); err != nil {
-			hc.Unset("component") // the component failed, unset it.
+			// the component failed, unset it and retry
+			hc.Unset("component") 
+
+			pause.For(ctx, time.Second)
+
 			continue
 		}
-		hc.Set("component") // the component did not fail.
+		hc.Set("component") // the component did not fail; carry on
 
-		// continue on
+		// ...
 	}
-
-	hc.Healthy()
 }
 
 func mightFail(context.Context) (err error) {
-	// do something that might fail
 	// ...
 	return
 }
