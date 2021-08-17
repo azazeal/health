@@ -2,7 +2,7 @@ package health
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -87,8 +87,7 @@ func TestServeHTTP(t *testing.T) {
 			kase.check.ServeHTTP(rec, req)
 			res := rec.Result()
 
-			// TODO: use io.ReadAll when support for Go 1.15 is dropped
-			got, err := ioutil.ReadAll(res.Body)
+			got, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
 
 			assert.Equal(t, kase.code, res.StatusCode)
