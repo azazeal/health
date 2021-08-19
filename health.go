@@ -8,20 +8,18 @@ import (
 	"sync"
 )
 
-type contextKeyType int
-
-const contextKey contextKeyType = iota + 1
+type contextKeyType struct{}
 
 // NewContext returns a copy of ctx which carries check.
 func NewContext(ctx context.Context, check *Check) context.Context {
-	return context.WithValue(ctx, contextKey, check)
+	return context.WithValue(ctx, contextKeyType{}, check)
 }
 
 // FromContext returns the Check the given Context carries.
 //
 // FromContext panics in case the given Context carries no Check.
 func FromContext(ctx context.Context) *Check {
-	return ctx.Value(contextKey).(*Check)
+	return ctx.Value(contextKeyType{}).(*Check)
 }
 
 // Check implements a health check as the logical summation of named boolean
