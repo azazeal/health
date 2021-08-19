@@ -44,23 +44,23 @@ func TestServeHTTP(t *testing.T) {
 	)
 
 	empty := &Check{}
-	empty.Set()
-	empty.Unset("1")
-	empty.Unset("2")
-	empty.Unset("3", "4", "5")
-	empty.Set("3", "4", "5")
-	empty.Set("2")
-	empty.Set("1")
-	empty.Unset()
+	empty.Pass()
+	empty.Fail("1")
+	empty.Fail("2")
+	empty.Fail("3", "4", "5")
+	empty.Pass("3", "4", "5")
+	empty.Pass("2")
+	empty.Pass("1")
+	empty.Fail()
 
 	healthy := new(Check)
-	healthy.Set("1", "3")
-	healthy.Unset("2")
-	healthy.Set("2")
+	healthy.Pass("1", "3")
+	healthy.Fail("2")
+	healthy.Pass("2")
 
 	unhealthy := new(Check)
-	unhealthy.Unset("1", "2", "3")
-	unhealthy.Set("2")
+	unhealthy.Fail("1", "2", "3")
+	unhealthy.Pass("2")
 
 	cases := []*testCase{
 		// tests on empty
@@ -120,7 +120,7 @@ func TestFailing(t *testing.T) {
 
 	var c Check
 	for i := len(dst); i < cap(dst); i++ {
-		c.Unset(strconv.Itoa(i))
+		c.Fail(strconv.Itoa(i))
 	}
 	got := c.Failing(dst[len(dst):])
 

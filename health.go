@@ -34,8 +34,8 @@ type Check struct {
 	components map[string]struct{}
 }
 
-// Set sets the given components of the Check to not failing.
-func (c *Check) Set(components ...string) {
+// Pass sets the given components of the Check to not failing.
+func (c *Check) Pass(components ...string) {
 	if len(components) == 0 {
 		return
 	}
@@ -48,8 +48,8 @@ func (c *Check) Set(components ...string) {
 	}
 }
 
-// Unset sets the given components of the Check to failing.
-func (c *Check) Unset(components ...string) {
+// Fail sets the given components of the Check to failing.
+func (c *Check) Fail(components ...string) {
 	if len(components) == 0 {
 		return
 	}

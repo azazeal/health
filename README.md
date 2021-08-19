@@ -34,14 +34,14 @@ func main() {
 func longRunningTaskThatMightFail(ctx context.Context, hc *health.Check) {
 	for ctx.Err() == nil {
 		if err := mightFail(ctx); err != nil {
-			// the component failed, unset it and retry
-			hc.Unset("component") 
+			// the component failed
+			hc.Fail("component") 
 
 			pause.For(ctx, time.Second)
 
 			continue
 		}
-		hc.Set("component") // the component did not fail; carry on
+		hc.Pass("component") // the component did not fail; carry on
 
 		// ...
 	}
