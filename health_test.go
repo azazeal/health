@@ -86,6 +86,7 @@ func TestServeHTTP(t *testing.T) {
 
 			kase.check.ServeHTTP(rec, req)
 			res := rec.Result()
+			defer res.Body.Close()
 
 			got, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
