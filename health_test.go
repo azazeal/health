@@ -6,22 +6,28 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"sort"
 	"strconv"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestFromContextPanics(t *testing.T) {
-	assert.Panics(t, func() { _ = FromContext(context.TODO()) })
+	defer func() {
+		if recover() == nil {
+			t.Fatal("expected panic")
+		}
+	}()
+
+	_ = FromContext(context.Background())
 }
 
 func TestFromContext(t *testing.T) {
 	exp := new(Check)
 
-	ctx := NewContext(context.TODO(), exp)
-	assert.Same(t, exp, FromContext(ctx))
+	ctx := NewContext(context.Background(), exp)
+	if got := FromContext(ctx); exp != got {
+		t.Fatalf("\nexp: %p %#v\ngot: %p %#v", exp, exp, got, got)
+	}
 }
 
 func TestServeHTTP(t *testing.T) {
@@ -43,7 +49,7 @@ func TestServeHTTP(t *testing.T) {
 		tsu = "Service Unavailable\n"
 	)
 
-	empty := &Check{}
+	empty := new(Check)
 	empty.Pass()
 	empty.Fail("1")
 	empty.Fail("2")
@@ -88,11 +94,16 @@ func TestServeHTTP(t *testing.T) {
 			res := rec.Result()
 			defer res.Body.Close()
 
-			got, err := io.ReadAll(res.Body)
-			require.NoError(t, err)
-
-			assert.Equal(t, kase.code, res.StatusCode)
-			assert.Equal(t, kase.body, string(got))
+			body, err := io.ReadAll(res.Body)
+			if err != nil {
+				t.Fatalf("failed reading response body: %v", err)
+			}
+			if kase.code != res.StatusCode {
+				t.Errorf("code mismatch:\nexp: %d\ngot: %d", kase.code, res.StatusCode)
+			}
+			if got := string(body); kase.body != got {
+				t.Errorf("body mismatch:\nexp: %q\ngot: %q", kase.body, got)
+			}
 		})
 	}
 }
@@ -114,24 +125,15 @@ type testCase struct {
 }
 
 func TestFailing(t *testing.T) {
-	dst := make([]string, 5, 8)
-	for i := range dst {
-		dst[i] = strconv.Itoa(i)
-	}
+	exp := []string{"1", "2", "3"}
 
 	var c Check
-	for i := len(dst); i < cap(dst); i++ {
-		c.Fail(strconv.Itoa(i))
-	}
-	got := c.Failing(dst[len(dst):])
+	c.Fail(exp...)
 
-	p1 := reflect.ValueOf(dst[len(dst):]).Pointer()
-	p2 := reflect.ValueOf(got).Pointer()
-	assert.Equal(t, p1, p2)
+	got := c.Failing(nil)
+	sort.Strings(got)
 
-	exp := make([]string, cap(dst))
-	for i := range exp {
-		exp[i] = strconv.Itoa(i)
+	if !reflect.DeepEqual(exp, got) {
+		t.Errorf("slice mismatch:\nexp: %v\ngot: %v", exp, got)
 	}
-	assert.ElementsMatch(t, exp, dst[:cap(dst)])
 }
